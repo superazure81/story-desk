@@ -465,6 +465,32 @@ select {
   display: flex;
   gap: 14px;
   padding-top: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.font-control {
+  display: inline-flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.font-control select,
+.font-control input {
+  width: auto;
+  height: 28px;
+  padding: 2px 7px;
+}
+
+.font-control input {
+  width: 64px;
+}
+
+.text-button.danger {
+  color: #a8322c;
 }
 
 .editor {
@@ -562,6 +588,13 @@ progress {
   border: 1px solid var(--line-light);
   border-radius: 7px;
   padding: 14px;
+  position: relative;
+}
+
+.delete-world {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 .scene-card {

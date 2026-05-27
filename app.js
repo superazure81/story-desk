@@ -1,5 +1,8 @@
 ﻿const STORAGE_KEY = "storyDeskState";
 const SYNC_KEY = "storyDeskSync";
+const EDITOR_PREFS_KEY = "storyDeskEditorPrefs";
+const DRIVE_FILE_NAME = "story-desk-projects.json";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
 
 const starterProject = () => ({
   id: crypto.randomUUID(),
@@ -60,6 +63,7 @@ let activeView = "manuscript";
 let activeDocumentTab = "manuscript";
 let shouldFocusNotes = false;
 const collapsedChapters = new Set();
+let editorPrefs = loadEditorPrefs();
 let saveTimer;
 
 const el = {
@@ -78,6 +82,9 @@ const el = {
   sceneText: document.querySelector("#sceneText"),
   sceneSynopsis: document.querySelector("#sceneSynopsis"),
   sceneNotes: document.querySelector("#sceneNotes"),
+  editorFont: document.querySelector("#editorFont"),
+  editorFontSize: document.querySelector("#editorFontSize"),
+  deleteSceneBtn: document.querySelector("#deleteSceneBtn"),
   wordCount: document.querySelector("#wordCount"),
   chapterName: document.querySelector("#chapterName"),
   projectGoal: document.querySelector("#projectGoal"),
@@ -120,6 +127,33 @@ function loadState() {
 
   const project = starterProject();
   return { projects: [project], activeProjectId: project.id, activeSceneId: project.chapters[0].scenes[0].id };
+}
+
+function loadEditorPrefs() {
+  try {
+    return { font: "mono", size: 24, ...JSON.parse(localStorage.getItem(EDITOR_PREFS_KEY) || "{}") };
+  } catch {
+    return { font: "mono", size: 24 };
+  }
+}
+
+function saveEditorPrefs() {
+  localStorage.setItem(EDITOR_PREFS_KEY, JSON.stringify(editorPrefs));
+}
+
+function applyEditorPrefs() {
+  const families = {
+    mono: 'ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace',
+    serif: 'Georgia, "Times New Roman", serif',
+    sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
+  };
+  const family = families[editorPrefs.font] || families.mono;
+  const size = Math.min(36, Math.max(14, Number(editorPrefs.size) || 24));
+  el.editorFont.value = editorPrefs.font;
+  el.editorFontSize.value = size;
+  el.sceneText.style.fontFamily = family;
+  el.sceneText.style.fontSize = `${size}px`;
+  el.sceneTitle.style.fontFamily = family;
 }
 
 function ensureProjectShape(project) {
@@ -338,6 +372,7 @@ function renderEditor() {
   el.projectGoal.value = goal;
   el.goalProgress.value = goal ? Math.min(100, Math.round((total / goal) * 100)) : 0;
   el.goalLabel.textContent = `${total} / ${goal || "bez celu"}`;
+  applyEditorPrefs();
 }
 
 function renderSheetList() {
@@ -425,12 +460,13 @@ function renderPlot() {
       card.dataset.pointId = point.id;
       card.style.borderLeftColor = plotColor(line.color);
       card.innerHTML = `
-        <div class="plot-point-top">
+          <div class="plot-point-top">
           <button class="plot-drag-handle" type="button" aria-label="Przeciagnij punkt" title="Przeciagnij">☰</button>
           <h3></h3>
           <div class="plot-move-buttons">
             <button class="icon-button small move-up" type="button" aria-label="Przesun punkt w gore" title="W gore">↑</button>
             <button class="icon-button small move-down" type="button" aria-label="Przesun punkt w dol" title="W dol">↓</button>
+            <button class="icon-button small delete-plot-point" type="button" aria-label="Usun punkt" title="Usun">×</button>
           </div>
         </div>
         <p></p>
@@ -454,6 +490,10 @@ function renderPlot() {
       card.querySelector(".move-down").addEventListener("click", (event) => {
         event.stopPropagation();
         movePlotPoint(line.id, point.id, 1);
+      });
+      card.querySelector(".delete-plot-point").addEventListener("click", (event) => {
+        event.stopPropagation();
+        deletePlotPoint(line.id, point.id);
       });
       card.addEventListener("dragstart", (event) => {
         event.dataTransfer.effectAllowed = "move";
@@ -566,6 +606,16 @@ function reorderPlotPoint(sourceLineId, pointId, targetLineId, beforePointId) {
   saveSoon();
 }
 
+function deletePlotPoint(lineId, pointId) {
+  if (!confirm("Usunąć ten punkt fabularny?")) return;
+  const project = getProject();
+  const line = project.plot.lines.find((item) => item.id === lineId);
+  if (!line) return;
+  line.points = line.points.filter((item) => item.id !== pointId);
+  render();
+  saveSoon();
+}
+
 function plotColor(color) {
   return {
     blue: "#1685d9",
@@ -588,9 +638,13 @@ function renderWorldList(type, items) {
   items.forEach((item) => {
     const card = document.createElement("article");
     card.className = "world-item";
-    card.innerHTML = `<strong></strong><p></p>`;
+    card.innerHTML = `<button class="icon-button small delete-world" type="button" aria-label="Usun" title="Usun">×</button><strong></strong><p></p>`;
     card.querySelector("strong").textContent = item.name;
     card.querySelector("p").textContent = item.body;
+    card.querySelector(".delete-world").addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteWorldItem(type, item.id);
+    });
     card.addEventListener("click", async () => {
       const name = await askText("Nazwa", item.name);
       if (!name) return;
@@ -602,6 +656,15 @@ function renderWorldList(type, items) {
     });
     list.append(card);
   });
+}
+
+function deleteWorldItem(type, itemId) {
+  const labels = { characters: "postać", locations: "miejsce", ideas: "pomysł" };
+  if (!confirm(`Usunąć ${labels[type] || "element"}?`)) return;
+  const project = getProject();
+  project.world[type] = project.world[type].filter((item) => item.id !== itemId);
+  render();
+  saveSoon();
 }
 
 function renderSync() {
@@ -691,6 +754,20 @@ function addScene(chapterId) {
   saveSoon();
 }
 
+function deleteCurrentScene() {
+  const { project, chapter, scene } = getScene();
+  if (project.chapters.reduce((sum, item) => sum + item.scenes.length, 0) <= 1) {
+    alert("Nie można usunąć ostatniej sceny w projekcie.");
+    return;
+  }
+  if (!confirm(`Usunąć scenę "${scene.title || "Bez tytułu"}"?`)) return;
+  chapter.scenes = chapter.scenes.filter((item) => item.id !== scene.id);
+  const nextScene = chapter.scenes[0] || project.chapters.flatMap((item) => item.scenes)[0];
+  activeSceneId = nextScene.id;
+  render();
+  saveSoon();
+}
+
 async function askText(title, value = "") {
   el.dialogTitle.textContent = title;
   el.dialogInput.value = value;
@@ -757,6 +834,135 @@ function importProject(file) {
   reader.readAsText(file);
 }
 
+function loadGoogleIdentity() {
+  if (window.google?.accounts?.oauth2) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector("script[data-google-identity]");
+    if (existing) {
+      existing.addEventListener("load", resolve, { once: true });
+      existing.addEventListener("error", reject, { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.dataset.googleIdentity = "true";
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Nie udało się wczytać logowania Google."));
+    document.head.append(script);
+  });
+}
+
+async function getDriveToken() {
+  const sync = JSON.parse(localStorage.getItem(SYNC_KEY) || "{}");
+  const clientId = sync.googleClientId || el.googleClientId.value.trim();
+  if (!clientId) throw new Error("Najpierw wpisz Google OAuth Client ID i zapisz ustawienia.");
+  await loadGoogleIdentity();
+  return new Promise((resolve, reject) => {
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: DRIVE_SCOPE,
+      callback: (response) => {
+        if (response.error) {
+          reject(new Error(response.error));
+          return;
+        }
+        resolve(response.access_token);
+      }
+    });
+    tokenClient.requestAccessToken({ prompt: "consent" });
+  });
+}
+
+async function driveRequest(accessToken, url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(options.headers || {})
+    }
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Drive API error ${response.status}`);
+  }
+  return response;
+}
+
+async function findDriveStateFile(accessToken) {
+  const query = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and 'appDataFolder' in parents and trashed=false`);
+  const url = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name,modifiedTime)&pageSize=1`;
+  const response = await driveRequest(accessToken, url);
+  const data = await response.json();
+  return data.files?.[0] || null;
+}
+
+function buildMultipartBody(metadata, content) {
+  const boundary = `story_desk_${crypto.randomUUID()}`;
+  const body = [
+    `--${boundary}`,
+    "Content-Type: application/json; charset=UTF-8",
+    "",
+    JSON.stringify(metadata),
+    `--${boundary}`,
+    "Content-Type: application/json; charset=UTF-8",
+    "",
+    content,
+    `--${boundary}--`
+  ].join("\r\n");
+  return { boundary, body };
+}
+
+async function uploadStateToDrive() {
+  try {
+    saveSoon();
+    el.syncStatus.textContent = "Logowanie do Google...";
+    const accessToken = await getDriveToken();
+    el.syncStatus.textContent = "Szukanie pliku synchronizacji w Drive...";
+    const existing = await findDriveStateFile(accessToken);
+    const content = JSON.stringify({ ...state, syncedAt: new Date().toISOString() }, null, 2);
+    const metadata = existing ? { name: DRIVE_FILE_NAME } : { name: DRIVE_FILE_NAME, parents: ["appDataFolder"] };
+    const multipart = buildMultipartBody(metadata, content);
+    const url = existing
+      ? `https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=multipart`
+      : "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+    await driveRequest(accessToken, url, {
+      method: existing ? "PATCH" : "POST",
+      headers: { "Content-Type": `multipart/related; boundary=${multipart.boundary}` },
+      body: multipart.body
+    });
+    el.syncStatus.textContent = "Wysłano do Google Drive.";
+  } catch (error) {
+    el.syncStatus.textContent = `Nie udało się wysłać do Drive: ${error.message}`;
+  }
+}
+
+async function downloadStateFromDrive() {
+  try {
+    el.syncStatus.textContent = "Logowanie do Google...";
+    const accessToken = await getDriveToken();
+    const existing = await findDriveStateFile(accessToken);
+    if (!existing) {
+      el.syncStatus.textContent = "Nie znaleziono jeszcze pliku Story Desk w Google Drive. Najpierw wyślij dane z jednego urządzenia.";
+      return;
+    }
+    el.syncStatus.textContent = "Pobieranie projektu z Drive...";
+    const response = await driveRequest(accessToken, `https://www.googleapis.com/drive/v3/files/${existing.id}?alt=media`);
+    const downloaded = await response.json();
+    if (!Array.isArray(downloaded.projects) || !downloaded.projects.length) throw new Error("Plik Drive nie wygląda jak projekt Story Desk.");
+    downloaded.projects.forEach(ensureProjectShape);
+    state = downloaded;
+    activeProjectId = state.activeProjectId || state.projects[0].id;
+    activeSceneId = state.activeSceneId || state.projects[0].chapters[0]?.scenes[0]?.id;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    render();
+    el.syncStatus.textContent = "Pobrano z Google Drive.";
+  } catch (error) {
+    el.syncStatus.textContent = `Nie udało się pobrać z Drive: ${error.message}`;
+  }
+}
+
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     activeView = tab.dataset.view;
@@ -819,6 +1025,17 @@ el.addPlotPointBtn.addEventListener("click", () => {
   ensureProjectShape(project);
   addPlotPoint(project.plot.lines[0].id);
 });
+el.editorFont.addEventListener("change", (event) => {
+  editorPrefs.font = event.target.value;
+  saveEditorPrefs();
+  applyEditorPrefs();
+});
+el.editorFontSize.addEventListener("input", (event) => {
+  editorPrefs.size = event.target.value;
+  saveEditorPrefs();
+  applyEditorPrefs();
+});
+el.deleteSceneBtn.addEventListener("click", deleteCurrentScene);
 el.sceneTitle.addEventListener("input", (event) => updateScene("title", event.target.value));
 el.sceneText.addEventListener("input", (event) => updateScene("text", event.target.value));
 el.sceneSynopsis.addEventListener("input", (event) => updateScene("synopsis", event.target.value));
@@ -847,14 +1064,10 @@ document.querySelectorAll("[data-add-world]").forEach((button) => {
 });
 el.saveSyncSettings.addEventListener("click", () => {
   localStorage.setItem(SYNC_KEY, JSON.stringify({ googleClientId: el.googleClientId.value.trim() }));
-  el.syncStatus.textContent = "Ustawienia zapisane. Pełne Drive API można podpiąć po utworzeniu OAuth Client ID w Google Cloud.";
+  el.syncStatus.textContent = "Ustawienia zapisane. Możesz użyć przycisków Google Drive po skonfigurowaniu OAuth w Google Cloud.";
 });
-el.driveUploadBtn.addEventListener("click", () => {
-  el.syncStatus.textContent = "Do pełnej synchronizacji trzeba dodać Google Identity Services i Drive API. Na razie użyj eksportu JSON jako bezpiecznego przenoszenia projektu.";
-});
-el.driveDownloadBtn.addEventListener("click", () => {
-  el.syncStatus.textContent = "Pobieranie z Drive będzie drugim krokiem po konfiguracji OAuth. Import JSON działa już teraz.";
-});
+el.driveUploadBtn.addEventListener("click", uploadStateToDrive);
+el.driveDownloadBtn.addEventListener("click", downloadStateFromDrive);
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});

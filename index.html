@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pl">
   <head>
     <meta charset="utf-8">
@@ -84,6 +84,19 @@
               <div class="editor-meta">
                 <span id="wordCount">0 slow</span>
                 <span id="chapterName">Rozdzial</span>
+                <label class="font-control">
+                  Font
+                  <select id="editorFont">
+                    <option value="mono">Mono</option>
+                    <option value="serif">Serif</option>
+                    <option value="sans">Sans</option>
+                  </select>
+                </label>
+                <label class="font-control">
+                  Rozmiar
+                  <input id="editorFontSize" type="number" min="14" max="36" step="1">
+                </label>
+                <button class="text-button danger" id="deleteSceneBtn" type="button">Usuń scenę</button>
               </div>
             </div>
             <textarea id="sceneText" class="editor" spellcheck="true" aria-label="Tekst sceny"></textarea>
@@ -157,7 +170,7 @@
         <section class="view" id="syncView">
           <div class="sync-panel">
             <h1>Synchronizacja</h1>
-            <p>Ta wersja zapisuje wszystko lokalnie i pozwala przenosić projekt przez eksport/import JSON. Google Drive wymaga dodania własnego Google OAuth Client ID.</p>
+            <p>Ta wersja zapisuje lokalnie i potrafi wysłać lub pobrać cały stan aplikacji z Google Drive po dodaniu Google OAuth Client ID.</p>
             <label>
               Google OAuth Client ID
               <input id="googleClientId" type="text" placeholder="1234567890-...apps.googleusercontent.com">
@@ -167,7 +180,7 @@
               <button class="text-button" id="driveUploadBtn">Wyślij do Drive</button>
               <button class="text-button" id="driveDownloadBtn">Pobierz z Drive</button>
             </div>
-            <p class="fineprint" id="syncStatus">Eksport/import działa od razu. Przyciski Drive pokażą instrukcję konfiguracji.</p>
+            <p class="fineprint" id="syncStatus">Eksport/import działa od razu. Google Drive działa po konfiguracji OAuth w Google Cloud.</p>
           </div>
         </section>
       </main>
@@ -187,3 +200,4 @@
     <script src="app.js"></script>
   </body>
 </html>
+
