@@ -993,18 +993,29 @@ document.querySelectorAll(".document-tab[data-doc-view]").forEach((tab) => {
   });
 });
 
-document.querySelectorAll(".mobile-nav-button[data-mobile-view]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const target = button.dataset.mobileView;
-    if (target === "menu") {
-      el.sidebar.classList.toggle("open");
-      return;
-    }
-    activeView = target;
-    activeDocumentTab = target;
-    el.sidebar.classList.remove("open");
-    render();
-  });
+function handleMobileNav(target) {
+  if (target === "menu") {
+    el.sidebar.classList.toggle("open");
+    return;
+  }
+  activeView = target;
+  activeDocumentTab = target;
+  el.sidebar.classList.remove("open");
+  render();
+}
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".mobile-nav-button[data-mobile-view]");
+  if (!button) return;
+  event.preventDefault();
+  handleMobileNav(button.dataset.mobileView);
+});
+
+document.addEventListener("touchend", (event) => {
+  const button = event.target.closest(".mobile-nav-button[data-mobile-view]");
+  if (!button) return;
+  event.preventDefault();
+  handleMobileNav(button.dataset.mobileView);
 });
 
 el.sidebarToggle.addEventListener("click", () => el.sidebar.classList.toggle("open"));
