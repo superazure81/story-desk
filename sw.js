@@ -1,4 +1,4 @@
-const CACHE_NAME = "story-desk-v8";
+const CACHE_NAME = "story-desk-v10";
 const ASSETS = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", (event) => {

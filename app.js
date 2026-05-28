@@ -242,6 +242,9 @@ function render() {
   document.querySelectorAll(".document-tab[data-doc-view]").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.docView === activeDocumentTab);
   });
+  document.querySelectorAll(".mobile-nav-button[data-mobile-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.mobileView === activeView);
+  });
 
   if (shouldFocusNotes) {
     shouldFocusNotes = false;
@@ -986,6 +989,20 @@ document.querySelectorAll(".document-tab[data-doc-view]").forEach((tab) => {
     } else {
       activeView = target;
     }
+    render();
+  });
+});
+
+document.querySelectorAll(".mobile-nav-button[data-mobile-view]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const target = button.dataset.mobileView;
+    if (target === "menu") {
+      el.sidebar.classList.toggle("open");
+      return;
+    }
+    activeView = target;
+    activeDocumentTab = target;
+    el.sidebar.classList.remove("open");
     render();
   });
 });
