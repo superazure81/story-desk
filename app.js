@@ -1152,11 +1152,11 @@ function handleMobileNav(target) {
   render();
 }
 
-document.addEventListener("click", (event) => {
-  const button = event.target.closest(".mobile-nav-button[data-mobile-view]");
-  if (!button) return;
-  event.preventDefault();
-  handleMobileNav(button.dataset.mobileView);
+document.querySelectorAll(".mobile-nav-button[data-mobile-view]").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    handleMobileNav(button.dataset.mobileView);
+  });
 });
 
 el.sidebarToggle.addEventListener("click", () => {
