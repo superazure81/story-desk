@@ -27,8 +27,18 @@ const starterProject = () => ({
   world: {
     characters: [{ id: crypto.randomUUID(), name: "Główna postać", body: "Cel, lęk, sekret." }],
     locations: [{ id: crypto.randomUUID(), name: "Ważne miejsce", body: "Atmosfera, funkcja w historii." }],
-    ideas: [{ id: crypto.randomUUID(), name: "Motyw", body: "Obraz, zdanie albo konflikt do wykorzystania." }]
+    ideas: []
   },
+  notes: [
+    {
+      id: crypto.randomUUID(),
+      type: "idea",
+      title: "Motyw do rozwinięcia",
+      body: "Obraz, zdanie albo konflikt, do którego chcesz wrócić.",
+      pinned: true,
+      updatedAt: new Date().toISOString()
+    }
+  ],
   plot: {
     lines: [
       {
@@ -61,7 +71,8 @@ let activeProjectId = state.activeProjectId || state.projects[0].id;
 let activeSceneId = state.activeSceneId || state.projects[0].chapters[0].scenes[0].id;
 let activeView = "manuscript";
 let activeDocumentTab = "manuscript";
-let shouldFocusNotes = false;
+let activeNoteId = getProject().notes?.[0]?.id || "";
+let noteFilter = "all";
 const collapsedChapters = new Set();
 let editorPrefs = loadEditorPrefs();
 let saveTimer;
@@ -69,6 +80,7 @@ let saveTimer;
 const el = {
   saveState: document.querySelector("#saveState"),
   sidebar: document.querySelector("#sidebar"),
+  sidebarScrim: document.querySelector("#sidebarScrim"),
   sidebarToggle: document.querySelector("#sidebarToggle"),
   projectSelect: document.querySelector("#projectSelect"),
   renameProjectBtn: document.querySelector("#renameProjectBtn"),
@@ -96,6 +108,17 @@ const el = {
   addPlotLineBtn: document.querySelector("#addPlotLineBtn"),
   addPlotPointBtn: document.querySelector("#addPlotPointBtn"),
   plotBoard: document.querySelector("#plotBoard"),
+  addNoteBtn: document.querySelector("#addNoteBtn"),
+  notesSearch: document.querySelector("#notesSearch"),
+  notesList: document.querySelector("#notesList"),
+  noteEditorPane: document.querySelector("#noteEditorPane"),
+  noteBackBtn: document.querySelector("#noteBackBtn"),
+  noteType: document.querySelector("#noteType"),
+  noteTitle: document.querySelector("#noteTitle"),
+  noteBody: document.querySelector("#noteBody"),
+  noteUpdated: document.querySelector("#noteUpdated"),
+  pinNoteBtn: document.querySelector("#pinNoteBtn"),
+  deleteNoteBtn: document.querySelector("#deleteNoteBtn"),
   exportBtn: document.querySelector("#exportBtn"),
   importInput: document.querySelector("#importInput"),
   googleClientId: document.querySelector("#googleClientId"),
@@ -161,6 +184,24 @@ function ensureProjectShape(project) {
   project.world.characters ||= [];
   project.world.locations ||= [];
   project.world.ideas ||= [];
+  if (!Array.isArray(project.notes)) {
+    project.notes = project.world.ideas.map((idea) => ({
+      id: idea.id || crypto.randomUUID(),
+      type: "idea",
+      title: idea.name || "Pomysł",
+      body: idea.body || "",
+      pinned: false,
+      updatedAt: project.updatedAt || new Date().toISOString()
+    }));
+  }
+  project.notes.forEach((note) => {
+    note.id ||= crypto.randomUUID();
+    note.type = note.type === "idea" ? "idea" : "note";
+    note.title ||= "";
+    note.body ||= "";
+    note.pinned = Boolean(note.pinned);
+    note.updatedAt ||= project.updatedAt || new Date().toISOString();
+  });
   project.plot ||= { lines: [] };
   project.plot.lines ||= [];
   if (!project.plot.lines.length) {
@@ -234,6 +275,7 @@ function render() {
   renderEditor();
   renderBoard();
   renderPlot();
+  renderNotes();
   renderWorld();
   renderSync();
   document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
@@ -246,13 +288,6 @@ function render() {
     button.classList.toggle("active", button.dataset.mobileView === activeView);
   });
 
-  if (shouldFocusNotes) {
-    shouldFocusNotes = false;
-    requestAnimationFrame(() => {
-      el.sceneNotes.focus();
-      el.sceneNotes.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  }
 }
 
 function renderProjects() {
@@ -428,6 +463,121 @@ function renderBoard() {
     });
     el.boardGrid.append(card);
   });
+}
+
+function getActiveNote() {
+  const project = getProject();
+  let note = project.notes.find((item) => item.id === activeNoteId);
+  if (!note) {
+    note = project.notes[0] || null;
+    activeNoteId = note?.id || "";
+  }
+  return note;
+}
+
+function formatNoteDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function renderNotes(preserveEditor = false) {
+  const project = getProject();
+  ensureProjectShape(project);
+  const query = (el.notesSearch?.value || "").trim().toLocaleLowerCase("pl");
+  const notes = project.notes
+    .filter((note) => noteFilter === "all" || note.type === noteFilter)
+    .filter((note) => !query || `${note.title} ${note.body}`.toLocaleLowerCase("pl").includes(query))
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  el.notesList.innerHTML = "";
+  notes.forEach((note) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `note-list-item ${note.id === activeNoteId ? "active" : ""}`;
+    button.innerHTML = `
+      <span class="note-list-top"><strong></strong><span class="note-pin-mark" aria-hidden="true"></span></span>
+      <span class="note-preview"></span>
+      <span class="note-list-meta"><span class="note-kind"></span><time></time></span>
+    `;
+    button.querySelector("strong").textContent = note.title || "Bez tytułu";
+    button.querySelector(".note-pin-mark").textContent = note.pinned ? "★" : "";
+    button.querySelector(".note-preview").textContent = note.body || "Pusta notatka";
+    button.querySelector(".note-kind").textContent = note.type === "idea" ? "Pomysł" : "Notatka";
+    button.querySelector("time").textContent = formatNoteDate(note.updatedAt);
+    button.addEventListener("click", () => {
+      activeNoteId = note.id;
+      el.noteEditorPane.classList.add("mobile-open");
+      renderNotes();
+    });
+    el.notesList.append(button);
+  });
+
+  if (!notes.length) {
+    const empty = document.createElement("div");
+    empty.className = "notes-empty";
+    empty.textContent = query ? "Brak pasujących notatek." : "Tu pojawią się Twoje notatki.";
+    el.notesList.append(empty);
+  }
+
+  const note = getActiveNote();
+  el.noteEditorPane.classList.toggle("is-empty", !note);
+  el.noteType.disabled = !note;
+  el.noteTitle.disabled = !note;
+  el.noteBody.disabled = !note;
+  el.pinNoteBtn.disabled = !note;
+  el.deleteNoteBtn.disabled = !note;
+  if (!preserveEditor) {
+    el.noteType.value = note?.type || "note";
+    el.noteTitle.value = note?.title || "";
+    el.noteBody.value = note?.body || "";
+  }
+  el.pinNoteBtn.textContent = note?.pinned ? "★" : "☆";
+  el.pinNoteBtn.classList.toggle("active", Boolean(note?.pinned));
+  el.noteUpdated.textContent = note ? `Ostatnia zmiana: ${formatNoteDate(note.updatedAt)}` : "Utwórz pierwszą notatkę";
+
+  document.querySelectorAll(".notes-filter").forEach((button) => {
+    button.classList.toggle("active", button.dataset.noteFilter === noteFilter);
+  });
+}
+
+function addNote(type = "note") {
+  const note = {
+    id: crypto.randomUUID(),
+    type,
+    title: "",
+    body: "",
+    pinned: false,
+    updatedAt: new Date().toISOString()
+  };
+  getProject().notes.unshift(note);
+  activeNoteId = note.id;
+  activeView = "notes";
+  activeDocumentTab = "notes";
+  el.noteEditorPane.classList.add("mobile-open");
+  render();
+  saveSoon();
+  requestAnimationFrame(() => el.noteTitle.focus());
+}
+
+function updateActiveNote(field, value) {
+  const note = getActiveNote();
+  if (!note) return;
+  note[field] = value;
+  note.updatedAt = new Date().toISOString();
+  renderNotes(true);
+  saveSoon();
+}
+
+function deleteActiveNote() {
+  const note = getActiveNote();
+  if (!note || !confirm(`Usunąć "${note.title || "Bez tytułu"}"?`)) return;
+  const project = getProject();
+  project.notes = project.notes.filter((item) => item.id !== note.id);
+  activeNoteId = project.notes[0]?.id || "";
+  el.noteEditorPane.classList.remove("mobile-open");
+  renderNotes();
+  saveSoon();
 }
 
 function renderPlot() {
@@ -632,7 +782,6 @@ function renderWorld() {
   const world = getProject().world;
   renderWorldList("characters", world.characters);
   renderWorldList("locations", world.locations);
-  renderWorldList("ideas", world.ideas);
 }
 
 function renderWorldList(type, items) {
@@ -828,6 +977,7 @@ function importProject(file) {
       state.projects.push(project);
       activeProjectId = project.id;
       activeSceneId = project.chapters[0]?.scenes[0]?.id;
+      activeNoteId = project.notes[0]?.id || "";
       render();
       saveSoon();
     } catch {
@@ -958,6 +1108,7 @@ async function downloadStateFromDrive() {
     state = downloaded;
     activeProjectId = state.activeProjectId || state.projects[0].id;
     activeSceneId = state.activeSceneId || state.projects[0].chapters[0]?.scenes[0]?.id;
+    activeNoteId = getProject().notes[0]?.id || "";
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     render();
     el.syncStatus.textContent = "Pobrano z Google Drive.";
@@ -983,24 +1134,21 @@ document.querySelectorAll(".document-tab[data-doc-view]").forEach((tab) => {
     }
 
     activeDocumentTab = target;
-    if (target === "notes") {
-      activeView = "manuscript";
-      shouldFocusNotes = true;
-    } else {
-      activeView = target;
-    }
+    activeView = target;
     render();
   });
 });
 
 function handleMobileNav(target) {
   if (target === "menu") {
-    el.sidebar.classList.toggle("open");
+    const isOpen = el.sidebar.classList.toggle("open");
+    el.sidebarScrim.classList.toggle("visible", isOpen);
     return;
   }
   activeView = target;
   activeDocumentTab = target;
   el.sidebar.classList.remove("open");
+  el.sidebarScrim.classList.remove("visible");
   render();
 }
 
@@ -1011,17 +1159,18 @@ document.addEventListener("click", (event) => {
   handleMobileNav(button.dataset.mobileView);
 });
 
-document.addEventListener("touchend", (event) => {
-  const button = event.target.closest(".mobile-nav-button[data-mobile-view]");
-  if (!button) return;
-  event.preventDefault();
-  handleMobileNav(button.dataset.mobileView);
+el.sidebarToggle.addEventListener("click", () => {
+  const isOpen = el.sidebar.classList.toggle("open");
+  el.sidebarScrim.classList.toggle("visible", isOpen);
 });
-
-el.sidebarToggle.addEventListener("click", () => el.sidebar.classList.toggle("open"));
+el.sidebarScrim.addEventListener("click", () => {
+  el.sidebar.classList.remove("open");
+  el.sidebarScrim.classList.remove("visible");
+});
 el.projectSelect.addEventListener("change", () => {
   activeProjectId = el.projectSelect.value;
   activeSceneId = getProject().chapters[0]?.scenes[0]?.id;
+  activeNoteId = getProject().notes[0]?.id || "";
   render();
   saveSoon();
 });
@@ -1033,6 +1182,7 @@ el.newProjectBtn.addEventListener("click", async () => {
   state.projects.push(project);
   activeProjectId = project.id;
   activeSceneId = project.chapters[0].scenes[0].id;
+  activeNoteId = project.notes[0]?.id || "";
   render();
   saveSoon();
 });
@@ -1053,6 +1203,23 @@ el.addPlotPointBtn.addEventListener("click", () => {
   ensureProjectShape(project);
   addPlotPoint(project.plot.lines[0].id);
 });
+el.addNoteBtn.addEventListener("click", () => addNote("note"));
+el.noteBackBtn.addEventListener("click", () => el.noteEditorPane.classList.remove("mobile-open"));
+el.notesSearch.addEventListener("input", renderNotes);
+document.querySelectorAll(".notes-filter").forEach((button) => {
+  button.addEventListener("click", () => {
+    noteFilter = button.dataset.noteFilter;
+    renderNotes();
+  });
+});
+el.noteType.addEventListener("change", (event) => updateActiveNote("type", event.target.value));
+el.noteTitle.addEventListener("input", (event) => updateActiveNote("title", event.target.value));
+el.noteBody.addEventListener("input", (event) => updateActiveNote("body", event.target.value));
+el.pinNoteBtn.addEventListener("click", () => {
+  const note = getActiveNote();
+  if (note) updateActiveNote("pinned", !note.pinned);
+});
+el.deleteNoteBtn.addEventListener("click", deleteActiveNote);
 el.editorFont.addEventListener("change", (event) => {
   editorPrefs.font = event.target.value;
   saveEditorPrefs();

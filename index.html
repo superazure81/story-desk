@@ -55,6 +55,7 @@
           <button class="tab active" data-view="manuscript">Tekst</button>
           <button class="tab" data-view="board">Tablica</button>
           <button class="tab" data-view="plot">Fabula</button>
+          <button class="tab" data-view="notes">Notatki</button>
           <button class="tab" data-view="world">Swiat</button>
           <button class="tab" data-view="sync">Sync</button>
         </nav>
@@ -67,6 +68,7 @@
           <div id="chapterList"></div>
         </section>
       </aside>
+      <button class="sidebar-scrim" id="sidebarScrim" type="button" aria-label="Zamknij menu"></button>
 
       <main class="workspace">
         <section class="view active" id="manuscriptView">
@@ -160,13 +162,46 @@
               </div>
               <div id="locationsList" class="world-list"></div>
             </article>
-            <article>
-              <div class="view-head compact">
-                <h1>Pomysły</h1>
-                <button class="icon-button small" data-add-world="ideas" aria-label="Dodaj pomysl" title="Dodaj pomysl">＋</button>
+          </div>
+        </section>
+
+        <section class="view" id="notesView">
+          <div class="notes-shell">
+            <aside class="notes-list-pane">
+              <div class="notes-list-head">
+                <div>
+                  <span>Twoja przestrzeń</span>
+                  <h1>Notatki i pomysły</h1>
+                </div>
+                <button class="notes-add-button" id="addNoteBtn" type="button" aria-label="Nowa notatka">＋</button>
               </div>
-              <div id="ideasList" class="world-list"></div>
-            </article>
+              <label class="notes-search">
+                <span aria-hidden="true">⌕</span>
+                <input id="notesSearch" type="search" placeholder="Szukaj" aria-label="Szukaj w notatkach">
+              </label>
+              <div class="notes-filters" role="group" aria-label="Filtr notatek">
+                <button class="notes-filter active" type="button" data-note-filter="all">Wszystkie</button>
+                <button class="notes-filter" type="button" data-note-filter="note">Notatki</button>
+                <button class="notes-filter" type="button" data-note-filter="idea">Pomysły</button>
+              </div>
+              <div id="notesList" class="notes-list"></div>
+            </aside>
+            <section class="note-editor-pane" id="noteEditorPane">
+              <div class="note-editor-toolbar">
+                <button class="note-back-button" id="noteBackBtn" type="button" aria-label="Wróć do listy">‹ Notatki</button>
+                <select id="noteType" aria-label="Typ wpisu">
+                  <option value="note">Notatka</option>
+                  <option value="idea">Pomysł</option>
+                </select>
+                <button class="icon-button note-pin-button" id="pinNoteBtn" type="button" aria-label="Przypnij notatkę" title="Przypnij">☆</button>
+                <button class="text-button danger" id="deleteNoteBtn" type="button">Usuń</button>
+              </div>
+              <div class="note-paper">
+                <input id="noteTitle" class="note-title-input" type="text" placeholder="Tytuł" aria-label="Tytuł notatki">
+                <textarea id="noteBody" class="note-body-input" placeholder="Zapisz myśl, fragment dialogu, pytanie albo pomysł…" aria-label="Treść notatki"></textarea>
+                <span id="noteUpdated" class="note-updated"></span>
+              </div>
+            </section>
           </div>
         </section>
 
@@ -189,11 +224,26 @@
       </main>
 
       <nav class="mobile-nav" aria-label="Nawigacja mobilna">
-        <button class="mobile-nav-button active" data-mobile-view="manuscript">Tekst</button>
-        <button class="mobile-nav-button" data-mobile-view="plot">Plan</button>
-        <button class="mobile-nav-button" data-mobile-view="world">Postacie</button>
-        <button class="mobile-nav-button" data-mobile-view="sync">Sync</button>
-        <button class="mobile-nav-button" data-mobile-view="menu">Menu</button>
+        <button class="mobile-nav-button active" data-mobile-view="manuscript">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10.5A2.5 2.5 0 0 1 18 7v12.5H7.5A2.5 2.5 0 0 1 5 17V4.5Zm3 4h7M8 12h7M8 15.5h4.5"/></svg>
+          <span>Tekst</span>
+        </button>
+        <button class="mobile-nav-button" data-mobile-view="plot">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18.5V9m7 9.5v-13m7 13v-7M3.5 18.5h17"/></svg>
+          <span>Plan</span>
+        </button>
+        <button class="mobile-nav-button" data-mobile-view="notes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h14v15H5zM8 8h8M8 11.5h8M8 15h5"/></svg>
+          <span>Notatki</span>
+        </button>
+        <button class="mobile-nav-button" data-mobile-view="world">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.5-1a2.5 2.5 0 1 0 0-5M3.5 19a5 5 0 0 1 10 0m1-5.5A4.5 4.5 0 0 1 20.5 18"/></svg>
+          <span>Postacie</span>
+        </button>
+        <button class="mobile-nav-button" data-mobile-view="menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
+          <span>Więcej</span>
+        </button>
       </nav>
     </div>
 

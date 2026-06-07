@@ -201,9 +201,255 @@ select {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   margin: 8px 0 12px;
+}
+
+.notes-shell {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  background: #f5f5f7;
+}
+
+.notes-list-pane {
+  min-width: 0;
+  overflow: auto;
+  border-right: 1px solid var(--line);
+  background: #f5f5f7;
+}
+
+.notes-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 18px 12px;
+}
+
+.notes-list-head span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.notes-list-head h1 {
+  margin: 4px 0 0;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.notes-add-button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: #007aff;
+  color: white;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.notes-search {
+  position: relative;
+  display: block;
+  margin: 0 14px 10px;
+}
+
+.notes-search span {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #77777d;
+  font-size: 19px;
+}
+
+.notes-search input {
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: #e5e5ea;
+  padding: 0 12px 0 34px;
+  outline: none;
+  font-size: 15px;
+}
+
+.notes-filters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  margin: 0 14px 12px;
+  padding: 3px;
+  border-radius: 9px;
+  background: #e5e5ea;
+}
+
+.notes-filter {
+  min-height: 29px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #55555a;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.notes-filter.active {
+  background: #fff;
+  color: #1c1c1e;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.notes-list {
+  padding: 0 10px 24px;
+}
+
+.note-list-item {
+  display: grid;
+  width: 100%;
+  gap: 5px;
+  border: 0;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.12);
+  border-radius: 10px;
+  background: transparent;
+  padding: 12px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.note-list-item.active {
+  border-color: transparent;
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.07);
+}
+
+.note-list-top,
+.note-list-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.note-list-top strong {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-pin-mark {
+  color: #ff9f0a;
+}
+
+.note-preview {
+  overflow: hidden;
+  color: #636366;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-list-meta {
+  justify-content: flex-start;
+  color: #8e8e93;
+  font-size: 11px;
+}
+
+.note-kind {
+  color: #007aff;
+  font-weight: 700;
+}
+
+.notes-empty {
+  padding: 44px 20px;
+  color: #8e8e93;
+  text-align: center;
+}
+
+.note-editor-pane {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  background: #fff;
+}
+
+.note-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--line-light);
+}
+
+.note-editor-toolbar select {
+  height: 34px;
+  margin-right: auto;
+  border: 0;
+  border-radius: 8px;
+  background: #f2f2f7;
+  padding: 0 28px 0 10px;
+}
+
+.note-back-button {
+  display: none;
+  border: 0;
+  background: transparent;
+  color: #007aff;
+  font-size: 16px;
+}
+
+.note-pin-button.active {
+  color: #ff9f0a;
+}
+
+.note-paper {
+  width: min(760px, 100%);
+  min-height: 0;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 64px clamp(28px, 7vw, 88px) 28px;
+}
+
+.note-title-input {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 0 20px !important;
+  color: #1c1c1e;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 760;
+  letter-spacing: -0.035em;
+  outline: none;
+}
+
+.note-body-input {
+  width: 100%;
+  min-height: 300px;
+  resize: none;
+  border: 0;
+  background: transparent;
+  color: #2c2c2e;
+  padding: 0;
+  outline: none;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  line-height: 1.72;
+}
+
+.note-updated {
+  padding-top: 16px;
+  color: #8e8e93;
+  font-size: 12px;
+}
+
+.note-editor-pane.is-empty .note-paper {
+  opacity: 0.55;
 }
 
 .tab {
@@ -626,7 +872,7 @@ progress {
 
 .world-columns {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   padding: 24px 26px 40px;
 }
@@ -843,6 +1089,10 @@ dialog button {
   display: none;
 }
 
+.sidebar-scrim {
+  display: none;
+}
+
 @media (max-width: 980px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -872,6 +1122,23 @@ dialog button {
     transform: translateX(0);
   }
 
+  .sidebar-scrim {
+    position: fixed;
+    z-index: 4;
+    inset: 52px 0 0;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease;
+  }
+
+  .sidebar-scrim.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   #manuscriptView.active {
     grid-template-columns: minmax(260px, 38vw) minmax(0, 1fr);
   }
@@ -888,7 +1155,7 @@ dialog button {
   }
 
   .world-columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .plot-head {
@@ -967,7 +1234,7 @@ dialog button {
   }
 
   .sheet-list {
-    max-height: 156px;
+    max-height: 136px;
     flex: 0 0 auto;
     border-right: 0;
     border-bottom: 1px solid rgba(60, 60, 67, 0.14);
@@ -979,8 +1246,8 @@ dialog button {
   }
 
   .sheet-list-head {
-    min-height: 50px;
-    padding: 8px 14px 4px;
+    min-height: 46px;
+    padding: 7px 14px 3px;
     background: #f2f2f7;
     border-bottom: 0;
   }
@@ -993,8 +1260,8 @@ dialog button {
   .sheet-card {
     display: inline-block;
     vertical-align: top;
-    width: min(72vw, 280px);
-    min-height: 82px;
+    width: min(64vw, 252px);
+    min-height: 72px;
     margin: 5px 0 8px 10px;
     padding: 10px 12px;
     border: 1px solid rgba(60, 60, 67, 0.12);
@@ -1028,7 +1295,7 @@ dialog button {
   }
 
   .editor-header {
-    padding: 18px 18px 10px;
+    padding: 18px 20px 8px;
     background: #fff;
   }
 
@@ -1036,7 +1303,7 @@ dialog button {
     flex: 1 1 auto;
     font-size: 19px;
     min-height: 44dvh;
-    padding: 18px 18px 32px;
+    padding: 16px 20px 36px;
     line-height: 1.66;
     background: #fff;
   }
@@ -1052,13 +1319,7 @@ dialog button {
   }
 
   .font-control {
-    width: calc(50% - 6px);
-    justify-content: space-between;
-    min-height: 36px;
-    padding: 0 10px;
-    border-radius: 8px;
-    background: #f2f2f7;
-    color: #555;
+    display: none;
   }
 
   .font-control select,
@@ -1070,10 +1331,11 @@ dialog button {
   }
 
   .text-button.danger {
-    width: 100%;
-    justify-content: center;
+    margin-left: auto;
+    min-height: 32px;
+    padding: 0 6px;
     border: 0;
-    background: #fff1f0;
+    background: transparent;
     color: #d70015;
   }
 
@@ -1107,9 +1369,20 @@ dialog button {
     padding: 12px;
   }
 
+  .sidebar-scrim {
+    top: calc(48px + env(safe-area-inset-top));
+    bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
   .icon-button,
   .text-button {
     min-height: 44px;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px;
   }
 
   .world-columns,
@@ -1171,13 +1444,27 @@ dialog button {
   }
 
   .mobile-nav-button {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 2px;
     border: 0;
     border-radius: 8px;
     background: transparent;
     color: #6b6b70;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0;
+  }
+
+  .mobile-nav-button svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .mobile-nav-button.active {
@@ -1193,5 +1480,99 @@ dialog button {
 
   .scene-move-buttons {
     opacity: 1;
+  }
+
+  .notes-shell {
+    position: relative;
+    display: block;
+    height: 100%;
+    overflow: hidden;
+    background: #f2f2f7;
+  }
+
+  .notes-list-pane {
+    height: 100%;
+    border-right: 0;
+    background: #f2f2f7;
+  }
+
+  .notes-list-head {
+    padding: 18px 16px 10px;
+  }
+
+  .notes-list-head h1 {
+    font-size: 30px;
+  }
+
+  .notes-add-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .notes-search {
+    margin-inline: 16px;
+  }
+
+  .notes-filters {
+    margin-inline: 16px;
+  }
+
+  .notes-list {
+    padding: 0 10px 90px;
+  }
+
+  .note-list-item {
+    min-height: 78px;
+    margin-bottom: 2px;
+    padding: 12px 14px;
+  }
+
+  .note-editor-pane {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    transform: translateX(102%);
+    transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .note-editor-pane.mobile-open {
+    transform: translateX(0);
+  }
+
+  .note-editor-toolbar {
+    min-height: 52px;
+    padding: 6px 10px;
+  }
+
+  .note-back-button {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    padding: 0 4px;
+  }
+
+  .note-editor-toolbar select {
+    width: 94px;
+    margin-right: 0;
+  }
+
+  .note-editor-toolbar .danger {
+    width: auto;
+    min-height: 40px;
+    padding-inline: 8px;
+    background: transparent;
+  }
+
+  .note-paper {
+    padding: 30px 20px 20px;
+  }
+
+  .note-title-input {
+    font-size: 32px;
+  }
+
+  .note-body-input {
+    font-size: 18px;
+    line-height: 1.62;
   }
 }
